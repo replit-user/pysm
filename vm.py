@@ -2,6 +2,7 @@ class RegisterError(Exception):pass
 class BoundsError(Exception):pass
 class OpcodeError(Exception):pass
 class FileError(Exception):pass
+class ExitCodeError(Exception):pass
 try:
     import random
     import argparse
@@ -186,7 +187,17 @@ try:
         elif call == 15:
             registers["frr"] = input(str(registers["ar1"]))
         elif call == 20:
-            exit(int(registers["frr"]))
+            exit_code = int(registers["frr"])
+            if exit_code != 0 and exit_code != 1 and exit_code != 5 and exit_code != 10:
+                raise ExitCodeError("invalid exit code, use 0 for succsess, 1 for error, 5 for premature termination, 10 for program cought error")
+            print("\n")
+            if exit_code == 1:
+                print("error during execution exiting...")
+            elif exit_code == 5:
+                print("program ended prematurely, exiting...")
+            elif exit_code == 10:
+                print("program cought error, exiting...")
+            exit(exit_code)
         elif call == 25:
             with open(str(registers["ar1"]).strip(), str(registers["ar2"]).strip()) as f:
                 if registers["ar2"].strip() == "r":
@@ -265,4 +276,7 @@ try:
                 program_counter += 1
         except RecursionError:
             continue
-except KeyboardInterrupt:pass
+except KeyboardInterrupt:
+    execute("mov frr,5")
+    execute("mov scr,20")
+    execute("sys")
