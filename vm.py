@@ -1,3 +1,7 @@
+class RegisterError(Exception):pass
+class BoundsError(Exception):pass
+class OpcodeError(Exception):pass
+class FileError(Exception):pass
 try:
     import random
     import argparse
@@ -95,7 +99,7 @@ try:
             if dest in registers:
                 registers[dest] = parse_value(src)
             else:
-                panic("ERROR: Tried to move a value into a non-register")
+                raise RegisterError("tried to move a value into a non register")
         elif opcode == "add":
             if args[0] in registers:
                 registers[args[0]] += parse_value(args[1])
@@ -108,7 +112,7 @@ try:
         elif opcode == "div":
             divisor = parse_value(args[1])
             if divisor == 0:
-                panic("ERROR: division by 0")
+                raise ZeroDivisionError("division by 0")
             if args[0] in registers:
                 registers[args[0]] = registers[args[0]] / divisor
         elif opcode == "nop":
@@ -117,27 +121,24 @@ try:
             handle_syscall(registers["scr"])
         elif opcode == "int":
             if args[0] in registers:
-                try:
-                    registers[args[0]] = int(registers[args[0]])
-                except:
-                    panic("ERROR: can't convert to int")
+                registers[args[0]] = int(registers[args[0]])
         elif opcode == "cmp":
             if args[0] not in registers:
-                panic("ERROR: trying to compare with a non register")
+                raise RegisterError("trying to compare with a non register")
             registers["cr"] = (registers[args[0]] == parse_value(args[1]))
         elif opcode == "jt":
             if int(args[0]) >= len(code):
-                panic("ERROR: out of bounds jump")
+                raise BoundsError("out of bounds jump")
             if registers["cr"]:
                 program_counter = int(args[0])
         elif opcode == "jf":
             if not registers["cr"]:
                 if int(args[0]) >= len(code):
-                    panic("ERROR: out of bounds jump")
+                    raise BoundsError("out of bounds jump")
                 program_counter = int(args[0])
         elif opcode == "jmp":
             if int(args[0]) >= len(code):
-                panic("ERROR: out of bounds jump")
+                raise BoundsError("out of bounds jump")
             program_counter = int(args[0])
         elif opcode == "inc":
             if args[0] in registers:
@@ -149,15 +150,15 @@ try:
             program_vars[args[0]] = parse_value(args[1])
         elif opcode == "load":
             if args[0] not in registers:
-                panic("ERROR: tried to load value into non register")
+                raise RegisterError("tried to load value into non register")
             if registers["dp"] >= len(program_mem):
-                panic("ERROR: tried to load invalid memmory adress")
+                raise MemoryError("tried to load invalid memmory adress")
             registers[args[0]] = program_mem[registers["dp"]]
         elif opcode == "store":
             if registers["dp"] >= len(program_mem):
-                panic("ERROR: tried to write to invalid memmory")
+                raise MemoryError("tried to write to invalid memmory")
             if args[0] not in registers:
-                panic("ERROR: tried to store into invalid register")
+                raise RegisterError("tried to store into invalid register")
             program_mem[registers["dp"]] = registers[args[0]]
         elif opcode == "str":
             registers[args[0]] = str(registers[args[0]])
@@ -176,7 +177,7 @@ try:
         elif opcode == "flt":
             registers[args[0]] = float(registers[args[0]])
         else:
-            panic("ERROR: uknown opcode")
+            raise OpcodeError("uknown opcode")
 
     def handle_syscall(call):
         global registers,program_vars
@@ -194,7 +195,7 @@ try:
                     f.write(str(registers["ar3"]))
                 else:
 
-                    panic("Invalid file mode: only 'r' or 'w' supported")
+                    raise FileError("Invalid file mode: only 'r' or 'w' supported")
         elif call == 30:
             exec(str(registers["ar1"]))
         elif call == 35:
@@ -210,7 +211,7 @@ try:
                 if registers["frr"] != 0:
                     break
             else:
-                panic("ERROR: could not find non-zero memory value")
+                raise MemoryError("could not find non-zero memory value")
         elif call == 55:
             registers = {
         "r1": 0, "r2": 0, "r3": 0, "r4": 0, "r5": 0,
@@ -226,7 +227,7 @@ try:
         elif call == 70:
             registers["frr"] = program_counter
         else:
-            panic(f"ERROR: Unknown syscall code: {call}")
+            raise SystemError(f"Unknown syscall code: {call}")
 
 
     iterations = 0
@@ -242,7 +243,7 @@ try:
             registers["dp"] = int(registers["dp"])
             old_pc = program_counter
             if program_counter >= len(code):
-                panic("ERROR: program_counter out of bounds")
+                raise BoundsError("program_counter out of bounds")
             execute(code[program_counter])
             if debug:
                 print("-" * 40)
