@@ -135,9 +135,9 @@ Check the [`examples/`](examples/) folder:
 
 -   `hello.asm` — Print “Hello, World!”
     
--   `input_echo.asm` — Take input and print it
+-   `input.asm` — take user's name and output a greeting
     
--   `infinite_loop_counter.asm` — Count and print forever
+-   `loopr.asm` — Count and print forever
     
 
 ---
