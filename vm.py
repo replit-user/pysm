@@ -81,7 +81,10 @@ try:
         try:
             return int(val)
         except ValueError:
-            return val
+            try:
+                return float(val)
+            except ValueError:
+                return val
 
     def execute(instruction: str) -> None:
         global program_counter, registers
@@ -177,6 +180,16 @@ try:
                     execute(instruction)
         elif opcode == "flt":
             registers[args[0]] = float(registers[args[0]])
+        elif opcode == "cmplt":
+            if parse_value(args[0]) < parse_value(args[1]):
+                registers["cr"] = True
+            else:
+                registers["cr"] = False
+        elif opcode == "cmpgt":
+            if parse_value(args[0]) > parse_value(args[1]):
+                registers["cr"] = True
+            else:
+                registers["cr"] = False
         else:
             raise OpcodeError("uknown opcode")
 
@@ -223,6 +236,8 @@ try:
                     break
             else:
                 raise MemoryError("could not find non-zero memory value")
+        elif call == 80:
+            registers["frr"] = random.random()
         elif call == 55:
             registers = {
         "r1": 0, "r2": 0, "r3": 0, "r4": 0, "r5": 0,
