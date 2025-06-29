@@ -9,7 +9,7 @@ try:
     import shlex
     from time import sleep
 
-    def panic(message):
+    def panic(message:str):
         print(f"on line {program_counter + 1}")
         print(message)
         exit(1)
@@ -27,7 +27,7 @@ try:
     program_vars = {
         f"arg{i}": val for i, val in enumerate(args.args, 1)
     }
-    def split_commas_keep_quotes(s):
+    def split_commas_keep_quotes(s:str):
         lexer = shlex.shlex(s, posix=True)
         lexer.whitespace = ','
         lexer.whitespace_split = True
@@ -103,7 +103,7 @@ try:
             if dest in registers:
                 registers[dest] = parse_value(src)
             else:
-                raise RegisterError("tried to move a value into a non register")
+                raise RegisterError(f"line {program_counter + 1}: tried to move a value into a non register")
         elif opcode == "add":
             if args[0] in registers:
                 registers[args[0]] += parse_value(args[1])
@@ -116,7 +116,7 @@ try:
         elif opcode == "div":
             divisor = parse_value(args[1])
             if divisor == 0:
-                raise ZeroDivisionError("division by 0")
+                raise ZeroDivisionError(f"line {program_counter + 1}: division by 0")
             if args[0] in registers:
                 registers[args[0]] = registers[args[0]] / divisor
         elif opcode == "nop":
@@ -128,21 +128,21 @@ try:
                 registers[args[0]] = int(registers[args[0]])
         elif opcode == "cmp":
             if args[0] not in registers:
-                raise RegisterError("trying to compare with a non register")
+                raise RegisterError(f"line {program_counter + 1}: trying to compare with a non register")
             registers["cr"] = (registers[args[0]] == parse_value(args[1]))
         elif opcode == "jt":
             if int(args[0]) >= len(code):
-                raise BoundsError("out of bounds jump")
+                raise BoundsError(f"line {program_counter + 1}: out of bounds jump")
             if registers["cr"]:
                 program_counter = int(args[0])
         elif opcode == "jf":
             if not registers["cr"]:
                 if int(args[0]) >= len(code):
-                    raise BoundsError("out of bounds jump")
+                    raise BoundsError(f"line {program_counter + 1}: out of bounds jump")
                 program_counter = int(args[0])
         elif opcode == "jmp":
             if int(args[0]) >= len(code):
-                raise BoundsError("out of bounds jump")
+                raise BoundsError(f"line {program_counter + 1}: out of bounds jump")
             program_counter = int(args[0])
         elif opcode == "inc":
             if args[0] in registers:
@@ -154,15 +154,15 @@ try:
             program_vars[args[0]] = parse_value(args[1])
         elif opcode == "load":
             if args[0] not in registers:
-                raise RegisterError("tried to load value into non register")
+                raise RegisterError(f"line {program_counter + 1}: tried to load value into non register")
             if registers["dp"] >= len(program_mem):
-                raise MemoryError("tried to load invalid memmory adress")
+                raise MemoryError(f"line {program_counter + 1}: tried to load invalid memmory adress")
             registers[args[0]] = program_mem[registers["dp"]]
         elif opcode == "store":
             if registers["dp"] >= len(program_mem):
-                raise MemoryError("tried to write to invalid memmory")
+                raise MemoryError(f"line {program_counter + 1}: tried to write to invalid memmory")
             if args[0] not in registers:
-                raise RegisterError("tried to store into invalid register")
+                raise RegisterError(f"line {program_counter + 1}: tried to store into invalid register")
             program_mem[registers["dp"]] = registers[args[0]]
         elif opcode == "str":
             registers[args[0]] = str(registers[args[0]])
@@ -191,7 +191,7 @@ try:
             else:
                 registers["cr"] = False
         else:
-            raise OpcodeError("uknown opcode")
+            raise OpcodeError(f"line {program_counter + 1}: uknown opcode")
 
     def handle_syscall(call):
         global registers,program_vars
@@ -202,7 +202,7 @@ try:
         elif call == 20:
             exit_code = int(registers["frr"])
             if exit_code != 0 and exit_code != 1 and exit_code != 5 and exit_code != 10:
-                raise ExitCodeError("invalid exit code, use 0 for succsess, 1 for error, 5 for premature termination, 10 for program cought error")
+                raise ExitCodeError(f"line {program_counter + 1}: invalid exit code, use 0 for succsess, 1 for error, 5 for premature termination, 10 for program cought error")
             print("\n")
             if exit_code == 1:
                 print("error during execution exiting...")
@@ -219,7 +219,7 @@ try:
                     f.write(str(registers["ar3"]))
                 else:
 
-                    raise FileError("Invalid file mode: only 'r' or 'w' supported")
+                    raise FileError(f"line {program_counter + 1}: Invalid file mode: only 'r' or 'w' supported")
         elif call == 30:
             exec(str(registers["ar1"]))
         elif call == 35:
@@ -235,7 +235,7 @@ try:
                 if registers["frr"] != 0:
                     break
             else:
-                raise MemoryError("could not find non-zero memory value")
+                raise MemoryError(f"line {program_counter + 1}: could not find non-zero memory value")
         elif call == 80:
             registers["frr"] = random.random()
         elif call == 55:
@@ -269,7 +269,7 @@ try:
             registers["dp"] = int(registers["dp"])
             old_pc = program_counter
             if program_counter >= len(code):
-                raise BoundsError("program_counter out of bounds")
+                raise BoundsError(f"line {program_counter + 1}: program_counter out of bounds")
             execute(code[program_counter])
             if debug:
                 print("-" * 40)
