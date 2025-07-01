@@ -252,6 +252,21 @@ try:
             panic(registers["ar1"])
         elif call == 70:
             registers["frr"] = program_counter
+        elif call == 67:
+            err_type = registers["ar1"]
+            message = registers["ar2"]
+            if err_type == 1:
+                raise OpcodeError(message)
+            elif err_type == 2:
+                raise BoundsError(message)
+            elif err_type == 3:
+                raise ExitCodeError(message)
+            elif err_type == 4:
+                raise FileError(message)
+            elif err_type == 5:
+                raise MemoryError(message)
+            elif err_type == 6:
+                raise SystemError(message)
         else:
             raise SystemError(f"Unknown syscall code: {call}")
 
@@ -271,6 +286,11 @@ try:
             if program_counter >= len(code):
                 raise BoundsError(f"line {program_counter + 1}: program_counter out of bounds")
             execute(code[program_counter])
+            if program_counter <= old_pc:
+                iterations += 1
+            if iterations >= 100 and debug:
+                print(f"DEBUG: infinite loop found line {program_counter + 1}, exiting...")
+                exit(0)
             if debug:
                 print("-" * 40)
                 print(f"PC: {program_counter}")
